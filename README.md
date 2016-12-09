@@ -1,3 +1,4 @@
+![Treasure-Hunter image](https://github.com/Reynau/treasure-hunter/blob/master/treasure-hunter.png)
 # Treasure-Hunter
 Platform game developed following the @kittykatattack "Learning Pixi" tutorial.
 
