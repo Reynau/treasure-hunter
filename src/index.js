@@ -1,26 +1,72 @@
 const PIXI = require('pixi.js')
 
-var Container = PIXI.Container
-var autoDetectRenderer = PIXI.autoDetectRenderer
-var loader = PIXI.loader
-var resources = PIXI.loader.resources
-var Sprite = PIXI.Sprite
-var Text = PIXI.Text
+let Container = PIXI.Container
+let autoDetectRenderer = PIXI.autoDetectRenderer
+let loader = PIXI.loader
+let resources = PIXI.loader.resources
+let Sprite = PIXI.Sprite
+let Text = PIXI.Text
 
-var gameScene, gameOverScene
-var dungeon, door, explorer, treasure, blobs
-var healthBar, message
-var state
+let gameScene, gameOverScene
+let dungeon, door, explorer, treasure, blobs
+let level, maxNumOfBlobs, numOfBlobs
+let healthBar, levelMessage, endMessage
+let state
 
-var stage = new Container()
-var renderer = autoDetectRenderer(512, 512)
+let stage = new Container()
+let renderer = autoDetectRenderer(512, 512)
 document.body.appendChild(renderer.view)
 
 loader
     .add('images/treasureHunter.json')
     .load(setup)
 
+function initLevel () {
+  numOfBlobs = min(level + 1, maxNumOfBlobs)
+}
+function initExplorer () {
+  explorer.x = 68
+  explorer.y = gameScene.height / 2 - explorer.height / 2
+  explorer.vx = 0
+  explorer.vy = 0
+  explorer.baseSpeed = 5
+  explorer.speed = explorer.baseSpeed
+  explorer.health = 100
+  explorer.carryTreasure = false
+}
+function initTreasure () {
+  treasure.x = gameScene.width - treasure.width - 48
+  treasure.y = gameScene.height / 2 - treasure.height / 2
+}
+function initBlobs () {
+// Blobs
+  let spacing = 48
+  let xOffset = 150
+  let direction = 1
+
+  for (let i = 0; i < maxNumOfBlobs; ++i) {
+    let blob = blobs[i]
+    if (i < numOfBlobs) {
+      blob.x = spacing * i + xOffset
+      blob.y = randomInt(32, stage.height - blob.height - 32)
+      blob.speed = randomInt(2, 8)
+      blob.vy = blob.speed * direction
+      blob.damage = 1
+      blob.visible = true
+      direction *= -1
+    }
+    else {
+      blob.visible = false
+    }
+  }
+}
+
 function setup () {
+  // Level
+  level = 0
+  maxNumOfBlobs = 6
+  initLevel()
+
   // Game Scene
   gameScene = new Container()
   stage.addChild(gameScene)
@@ -30,7 +76,7 @@ function setup () {
   gameOverScene.visible = false
   stage.addChild(gameOverScene)
 
-  var id = resources['images/treasureHunter.json'].textures
+  let id = resources['images/treasureHunter.json'].textures
 
   // Dungeon
   dungeon = new Sprite(id['dungeon.png'])
@@ -43,40 +89,22 @@ function setup () {
 
   // Explorer
   explorer = new Sprite(id['explorer.png'])
-  explorer.x = 68
-  explorer.y = gameScene.height / 2 - explorer.height / 2
-  explorer.vx = 0
-  explorer.vy = 0
-  explorer.baseSpeed = 5
-  explorer.speed = explorer.baseSpeed
-  explorer.carryTreasure = false
+  initExplorer()
   gameScene.addChild(explorer)
 
   // Treasure
   treasure = new Sprite(id['treasure.png'])
-  treasure.x = gameScene.width - treasure.width - 48
-  treasure.y = gameScene.height / 2 - treasure.height / 2
+  initTreasure()
   gameScene.addChild(treasure)
 
-  // Blobs
-  var numOfBlobs = 6
-  var spacing = 48
-  var xOffset = 150
-  var direction = 1
-
   blobs = []
-
-  for (var i = 0; i < numOfBlobs; ++i) {
-    var blob = new Sprite(id['blob.png'])
-    blob.x = spacing * i + xOffset
-    blob.y = randomInt(32, stage.height - blob.height - 32)
-    blob.speed = randomInt(2, 8)
-    blob.vy = blob.speed * direction
-    direction *= -1
-
+  let j = 0
+  for (let i = 0; i < maxNumOfBlobs; ++i) {
+    let blob = new Sprite(id['blob.png'])
     blobs.push(blob)
     gameScene.addChild(blob)
   }
+  initBlobs()
 
   // Health Bar
   healthBar = new Container()
@@ -84,14 +112,14 @@ function setup () {
   gameScene.addChild(healthBar)
 
   // Create the black background rectangle
-  var innerBar = new PIXI.Graphics()
+  let innerBar = new PIXI.Graphics()
   innerBar.beginFill(0x000)
   innerBar.drawRect(0, 0, 128, 8)
   innerBar.endFill()
   healthBar.addChild(innerBar)
 
   // Create the front red rectangle
-  var outerBar = new PIXI.Graphics()
+  let outerBar = new PIXI.Graphics()
   outerBar.beginFill(0xFF3300)
   outerBar.drawRect(0, 0, 128, 8)
   outerBar.endFill()
@@ -99,19 +127,28 @@ function setup () {
 
   healthBar.outer = outerBar
 
-  message = new Text(
+  // Level Message
+  levelMessage = new Text(
+      'Level ' + level,
+      {fontFamily: 'Futura', fontSize: '24px', fill: 'white'}
+  )
+  levelMessage.position.set(gameScene.width - 170, 16)
+  gameScene.addChild(levelMessage)
+
+  // End Message
+  endMessage = new Text(
       'The End!',
       {fontFamily: 'Futura', fontSize: '64px', fill: 'white'}
   )
-  message.x = 120
-  message.y = stage.height / 2 - 32
-  gameOverScene.addChild(message)
+  endMessage.position.set(120, stage.height / 2 - 32)
+  gameOverScene.addChild(endMessage)
 
-  var left = keyboard(37)
-  var up = keyboard(38)
-  var right = keyboard(39)
-  var down = keyboard(40)
-  var space = keyboard(32)
+  let left = keyboard(37)
+  let up = keyboard(38)
+  let right = keyboard(39)
+  let down = keyboard(40)
+  let space = keyboard(32)
+  let enter = keyboard(13)
 
   left.press = function () {
     explorer.vx = -explorer.speed
@@ -160,6 +197,26 @@ function setup () {
     explorer.carryTreasure = false
     explorer.speed = explorer.baseSpeed
   }
+  enter.press = function () {
+    if (state === end) {
+      if (endMessage.text === 'You won!') {
+        ++level
+      } else if (state === end) {
+        level = 0
+      }
+      levelMessage.text = 'Level ' + level
+      healthBar.outer.width = 128
+      initLevel()
+      initExplorer()
+      initTreasure()
+      initBlobs()
+    }
+  }
+  enter.release = function () {
+    gameOverScene.visible = false
+    gameScene.visible = true
+    state = play
+  }
 
   state = play
   gameLoop()
@@ -176,10 +233,12 @@ function play () {
   explorer.y += explorer.vy
   contain(explorer, {x: 28, y: 10, width: 488, height: 480})
 
-  var explorerHit = false
-  blobs.forEach(function (blob) {
+  let explorerHit = false
+  let blobDamage = 0
+  for (let i = 0; i < numOfBlobs; ++i) {
+    let blob = blobs[i]
     blob.y += blob.vy
-    var blobHitsWall = contain(blob, {x: 28, y: 10, width: 488, height: 480})
+    let blobHitsWall = contain(blob, {x: 28, y: 10, width: 488, height: 480})
     if (blobHitsWall === 'top' || blobHitsWall === 'bottom') {
       blob.vy *= -1
     }
@@ -187,13 +246,15 @@ function play () {
     // If blob hits explorer
     if (hitTestRectangle(explorer, blob)) {
       explorerHit = true
+      blobDamage = blob.damage
     }
-  })
+  }
 
   // If blob hits explorer reduces health
   if (explorerHit) {
     explorer.alpha = 0.5
-    healthBar.outer.width -= 5
+    explorer.health -= blobDamage
+    healthBar.outer.width = explorer.health * 128 / 100
   } else {
     explorer.alpha = 1
   }
@@ -209,11 +270,11 @@ function play () {
 
   if (hitTestRectangle(treasure, door)) {
     state = end
-    message.text = 'You won!'
+    endMessage.text = 'You won!'
   }
   if (healthBar.outer.width < 0) {
     state = end
-    message.text = 'You lost!'
+    endMessage.text = 'You lost!'
   }
 }
 
@@ -223,7 +284,7 @@ function end () {
 }
 
 function contain (sprite, container) {
-  var collision
+  let collision
 
   // Left
   if (sprite.x < container.x) {
@@ -256,7 +317,7 @@ function randomInt (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 function keyboard (keyCode) {
-  var key = {}
+  let key = {}
   key.code = keyCode
   key.isDown = false
   key.isUp = true
@@ -290,8 +351,8 @@ function keyboard (keyCode) {
   return key
 }
 function hitTestRectangle (r1, r2) {
-  // Define the variables we'll need to calculate
-  var hit, combinedHalfWidths, combinedHalfHeights, vx, vy
+  // Define the letiables we'll need to calculate
+  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy
   // hit will determine whether there's a collision
   hit = false
   // Find the center points of each sprite
@@ -326,4 +387,8 @@ function hitTestRectangle (r1, r2) {
   }
   // `hit` will be either `true` or `false`
   return hit
+}
+
+function min (x, y) {
+  return y ^ ((x ^ y) & -(x < y))
 }
