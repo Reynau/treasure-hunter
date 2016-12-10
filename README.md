@@ -14,7 +14,7 @@ $ npm run build
 
 ## To do:
 - [ ] Start Menu
-- [ ] More Levels
+- [x] Level Handling
 - [ ] Items
 - [ ] Weapons
 - [ ] IA
