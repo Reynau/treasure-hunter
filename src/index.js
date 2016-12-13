@@ -48,10 +48,10 @@ function initBlobs () {
     let blob = blobs[i]
     if (i < numOfBlobs) {
       blob.x = spacing * i + xOffset
-      blob.y = randomInt(32, stage.height - blob.height - 32)
-      blob.speed = randomInt(2, 8)
+      blob.y = blob.height + blob.height * i
+      blob.speed = level + 2
       blob.vy = blob.speed * direction
-      blob.damage = 1
+      blob.damage = level + 1
       blob.visible = true
       direction *= -1
     }
@@ -237,10 +237,12 @@ function play () {
   let blobDamage = 0
   for (let i = 0; i < numOfBlobs; ++i) {
     let blob = blobs[i]
-    blob.y += blob.vy
-    let blobHitsWall = contain(blob, {x: 28, y: 10, width: 488, height: 480})
-    if (blobHitsWall === 'top' || blobHitsWall === 'bottom') {
-      blob.vy *= -1
+    if (!hitTestRectangle(blob, treasure)) {
+      blob.y += blob.vy
+      let blobHitsWall = contain(blob, {x: 28, y: 10, width: 488, height: 480})
+      if (blobHitsWall === 'top' || blobHitsWall === 'bottom') {
+        blob.vy *= -1
+      }
     }
 
     // If blob hits explorer
