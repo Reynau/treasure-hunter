@@ -7,16 +7,15 @@ Carry the treasure to the door without being killed!
 Use Up, Down, Left and Right keys to move. Keep space pressed to carry the treasure.
 Press Enter to start next level or restart game.
 
-## Instructions to get the bundle:
+## Instructions:
 ```
 $ npm install
 $ npm run build
+$ node src/htmlserv.js
 ```
 
 ## To do:
 - [ ] Start Menu
 - [x] Level Handling
-- [ ] Items
-- [ ] Weapons
-- [ ] IA
-- [ ] Own Web Server
+- [x] Collisions
+- [x] Own Web Server
