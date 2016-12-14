@@ -7,20 +7,26 @@ let resources = PIXI.loader.resources
 let Sprite = PIXI.Sprite
 let Text = PIXI.Text
 
-let gameScene, gameOverScene
+let menuScene, gameScene, gameOverScene
 let dungeon, door, explorer, treasure, blobs
 let level, maxNumOfBlobs, numOfBlobs
 let healthBar, levelMessage, endMessage
-let state
+let state, id
+
+let fontFamily
 
 let stage = new Container()
-let renderer = autoDetectRenderer(512, 512)
+let maxWidth = 512
+let maxHeight = 512
+let renderer = autoDetectRenderer(maxWidth, maxHeight)
 document.body.appendChild(renderer.view)
 
+// Preloading of the sprite
 loader
     .add('images/treasureHunter.json')
     .load(setup)
 
+// Initializations
 function initLevel () {
   numOfBlobs = min(level + 1, maxNumOfBlobs)
 }
@@ -54,30 +60,44 @@ function initBlobs () {
       blob.damage = level + 1
       blob.visible = true
       direction *= -1
-    }
-    else {
+    } else {
       blob.visible = false
     }
   }
 }
 
-function setup () {
-  // Level
-  level = 0
-  maxNumOfBlobs = 6
-  initLevel()
+// Setup functions
+function setScenes () {
+  id = resources['images/treasureHunter.json'].textures
+  // Menu Scene
+  menuScene = new Container()
+  menuScene.visible = true
+  stage.addChild(menuScene)
+  setMenuScene()
 
   // Game Scene
   gameScene = new Container()
+  gameScene.visible = false
   stage.addChild(gameScene)
+  setGameScene()
 
   // Game Over Scene
   gameOverScene = new Container()
   gameOverScene.visible = false
   stage.addChild(gameOverScene)
-
-  let id = resources['images/treasureHunter.json'].textures
-
+  setGameOverScene()
+}
+function setMenuScene () {
+  dungeon = new Sprite(id['dungeon.png'])
+  menuScene.addChild(dungeon)
+  let startButton = createButton((maxWidth - 128) / 2, (maxHeight - 68) / 2, 128, 68, 'START', function () {
+    state = play
+    menuScene.visible = false
+    gameScene.visible = true
+  })
+  menuScene.addChild(startButton)
+}
+function setGameScene () {
   // Dungeon
   dungeon = new Sprite(id['dungeon.png'])
   gameScene.addChild(dungeon)
@@ -97,8 +117,8 @@ function setup () {
   initTreasure()
   gameScene.addChild(treasure)
 
+  // Blobs
   blobs = []
-  let j = 0
   for (let i = 0; i < maxNumOfBlobs; ++i) {
     let blob = new Sprite(id['blob.png'])
     blobs.push(blob)
@@ -106,9 +126,21 @@ function setup () {
   }
   initBlobs()
 
-  // Health Bar
+  // Set HUD
+  setHealthBar()
+  setLevelMessage()
+}
+function setGameOverScene () {
+  endMessage = new Text(
+      'The End!',
+      {fontFamily: 'Futura', fontSize: '64px', fill: 'white'}
+  )
+  endMessage.position.set(120, maxHeight / 2 - 32)
+  gameOverScene.addChild(endMessage)
+}
+function setHealthBar () {
   healthBar = new Container()
-  healthBar.position.set(stage.width - 170, 6)
+  healthBar.position.set(gameScene.width - 170, 6)
   gameScene.addChild(healthBar)
 
   // Create the black background rectangle
@@ -126,23 +158,16 @@ function setup () {
   healthBar.addChild(outerBar)
 
   healthBar.outer = outerBar
-
-  // Level Message
+}
+function setLevelMessage () {
   levelMessage = new Text(
       'Level ' + level,
-      {fontFamily: 'Futura', fontSize: '24px', fill: 'white'}
+      {fontFamily: fontFamily, fontSize: '24px', fill: 'white'}
   )
   levelMessage.position.set(gameScene.width - 170, 16)
   gameScene.addChild(levelMessage)
-
-  // End Message
-  endMessage = new Text(
-      'The End!',
-      {fontFamily: 'Futura', fontSize: '64px', fill: 'white'}
-  )
-  endMessage.position.set(120, stage.height / 2 - 32)
-  gameOverScene.addChild(endMessage)
-
+}
+function setKeyboardBinding () {
   let left = keyboard(37)
   let up = keyboard(38)
   let right = keyboard(39)
@@ -213,22 +238,27 @@ function setup () {
     }
   }
   enter.release = function () {
-    gameOverScene.visible = false
-    gameScene.visible = true
     state = play
   }
+}
+function setDefaultValues () {
+  level = 0
+  maxNumOfBlobs = 6
 
-  state = play
-  gameLoop()
+  fontFamily = 'Arial'
 }
 
-function gameLoop () {
-  requestAnimationFrame(gameLoop)
-  state()
-  renderer.render(stage)
+// Game States
+function menu () {
+  menuScene.visible = true
+  gameScene.visible = false
+  gameOverScene.visible = false
 }
-
 function play () {
+  menuScene.visible = false
+  gameScene.visible = true
+  gameOverScene.visible = false
+
   explorer.x += explorer.vx
   explorer.y += explorer.vy
   contain(explorer, {x: 28, y: 10, width: 488, height: 480})
@@ -279,12 +309,49 @@ function play () {
     endMessage.text = 'You lost!'
   }
 }
-
 function end () {
+  menuScene.visible = false
   gameScene.visible = false
   gameOverScene.visible = true
 }
 
+// Auxiliar functions
+function createButton (x, y, w, h, t, f) {
+  let button = new Container()
+  button.position.set(x, y)
+  button.interactive = true
+  button.mousedown = f
+  button.touchstart = f
+  button.mouseover = function () {
+    button.box.tint = 0xffffff // Clean tint
+    button.box.tint = 0x44aa33
+  }
+  button.mouseout = function () {
+    button.box.tint = 0xffffff // Clean tint
+    button.box.tint = 0x66ff33
+  }
+
+  // Box
+  let box = new PIXI.Graphics()
+  box.beginFill(0xFFFFFF)
+  box.drawRect(0, 0, w, h)
+  box.endFill()
+  button.addChild(box)
+  button.box = box
+  button.box.tint = 0x66ff33
+
+  // Text
+  let fontSize = '32px'
+  let text = new Text(
+      t,
+      {fontFamily: fontFamily, fontSize: fontSize, fill: 'white'}
+  )
+  let textSize = textWidth(t, fontSize, fontSize)
+  text.position.set((w - textSize) / 2, (h - 32) / 2)
+  button.addChild(text)
+
+  return button
+}
 function contain (sprite, container) {
   let collision
 
@@ -317,40 +384,6 @@ function contain (sprite, container) {
 }
 function randomInt (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
-}
-function keyboard (keyCode) {
-  let key = {}
-  key.code = keyCode
-  key.isDown = false
-  key.isUp = true
-  key.press = undefined
-  key.release = undefined
-  // The `downHandler`
-  key.downHandler = function (event) {
-    if (event.keyCode === key.code) {
-      if (key.isUp && key.press) key.press()
-      key.isDown = true
-      key.isUp = false
-    }
-    event.preventDefault()
-  }
-  // The `upHandler`
-  key.upHandler = function (event) {
-    if (event.keyCode === key.code) {
-      if (key.isDown && key.release) key.release()
-      key.isDown = false
-      key.isUp = true
-    }
-    event.preventDefault()
-  }
-  // Attach event listeners
-  window.addEventListener(
-      'keydown', key.downHandler.bind(key), false
-  )
-  window.addEventListener(
-      'keyup', key.upHandler.bind(key), false
-  )
-  return key
 }
 function hitTestRectangle (r1, r2) {
   // Define the letiables we'll need to calculate
@@ -390,7 +423,72 @@ function hitTestRectangle (r1, r2) {
   // `hit` will be either `true` or `false`
   return hit
 }
-
 function min (x, y) {
   return y ^ ((x ^ y) & -(x < y))
+}
+function textWidth (txt, fontname, fontsize) {
+  this.e = document.createElement('span')
+  this.e.style.fontSize = fontsize
+  this.e.style.fontFamily = fontname
+  this.e.innerHTML = txt
+  document.body.appendChild(this.e)
+  let w = this.e.offsetWidth
+  document.body.removeChild(this.e)
+  return w
+}
+
+// Game logic
+function setup () {
+  state = menu  // Start the game on the menu
+
+  setDefaultValues()
+  setScenes()
+  setKeyboardBinding()
+
+  initLevel()
+  initExplorer()
+  initTreasure()
+  initBlobs()
+  gameLoop()
+}
+function gameLoop () {
+  requestAnimationFrame(gameLoop)
+  state()
+  renderer.render(stage)
+}
+
+// Keyboard binding
+function keyboard (keyCode) {
+  let key = {}
+  key.code = keyCode
+  key.isDown = false
+  key.isUp = true
+  key.press = undefined
+  key.release = undefined
+  // The `downHandler`
+  key.downHandler = function (event) {
+    if (event.keyCode === key.code) {
+      if (key.isUp && key.press) key.press()
+      key.isDown = true
+      key.isUp = false
+    }
+    event.preventDefault()
+  }
+  // The `upHandler`
+  key.upHandler = function (event) {
+    if (event.keyCode === key.code) {
+      if (key.isDown && key.release) key.release()
+      key.isDown = false
+      key.isUp = true
+    }
+    event.preventDefault()
+  }
+  // Attach event listeners
+  window.addEventListener(
+      'keydown', key.downHandler.bind(key), false
+  )
+  window.addEventListener(
+      'keyup', key.upHandler.bind(key), false
+  )
+  return key
 }
