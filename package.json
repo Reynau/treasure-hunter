@@ -6,7 +6,8 @@
   "scripts": {
     "standard": "standard --fix",
     "build": "browserify src/index.js -o dist/bundle.js && echo 'built!'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "browserify src/index.js -o dist/bundle.js && echo 'built!'"
   },
   "author": "",
   "license": "ISC",
