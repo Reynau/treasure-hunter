@@ -1,6 +1,6 @@
 ![Treasure-Hunter image](https://github.com/Reynau/treasure-hunter/blob/master/treasure-hunter.png)
 # Treasure-Hunter
-Platform game developed following the @kittykatattack "Learning Pixi" tutorial.
+Platform game developed following the @kittykatattack "Learning Pixi" tutorial. [Play it on Heroku!](https://treasure-game.herokuapp.com/)
 
 ## Objective:
 Carry the treasure to the door without being killed!
