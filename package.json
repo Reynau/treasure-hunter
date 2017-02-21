@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "standard": "standard --fix",
-    "build": "browserify src/index.js -o dist/bundle.js && echo 'built!'",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run build && node src/htmlserv.js"
+    "build": "browserify src/index.js -o docs/bundle.js && echo 'built!'",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
