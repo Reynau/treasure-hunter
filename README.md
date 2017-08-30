@@ -1,6 +1,6 @@
 ![Treasure-Hunter image](https://github.com/Reynau/treasure-hunter/blob/master/treasure-hunter.png)
 # Treasure-Hunter
-Platform game developed following the @kittykatattack "Learning Pixi" tutorial. [Play it on my website!](http://lopezreynau.space/treasure-hunter/)
+Platform game developed following the @kittykatattack "Learning Pixi" tutorial. [Play it on my website!](http://lopezreynau.me/treasure-hunter/)
 
 ## Objective:
 Carry the treasure to the door without being killed!
@@ -15,7 +15,7 @@ $ node src/htmlserv.js
 ```
 
 ## To do:
-- [ ] Start Menu
+- [x] Start Menu
 - [x] Level Handling
 - [x] Collisions
 - [x] Own Web Server
