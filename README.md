@@ -13,9 +13,3 @@ $ npm install
 $ npm run build
 $ node src/htmlserv.js
 ```
-
-## To do:
-- [x] Start Menu
-- [x] Level Handling
-- [x] Collisions
-- [x] Own Web Server
